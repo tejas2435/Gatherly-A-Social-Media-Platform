@@ -1,0 +1,94 @@
+.scroll-background {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  z-index: -1;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  padding: 30px 0;
+}
+
+.gradient-blur-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.452), rgba(139, 24, 255, 0.562));
+  backdrop-filter: blur(1px);
+  pointer-events: none; 
+}
+
+
+.scroll-row {
+  display: flex;
+  width: max-content;
+}
+
+.scroll-image {
+  flex-shrink: 0;
+  width: 300px;
+  height: 200px;
+  margin-right: 20px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.scroll-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.scroll-image:hover img {
+  transform: scale(1.1);
+}
+
+.diagonal-track-wrapper {
+  position: absolute;
+  /* top: -30%; */
+  left: -20%;
+  width: 140%;
+  transform: rotate(-20deg); 
+  overflow: hidden;
+}
+
+/* Animations */
+@keyframes scroll-left {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes scroll-right {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+/* Speed and direction */
+.scroll-slow-left {
+  animation: scroll-left 70s linear infinite;
+}
+
+.scroll-medium-right {
+  animation: scroll-right 60s linear infinite;
+}
+
+.scroll-slow-right {
+  animation: scroll-right 80s linear infinite;
+}
+
+.scroll-medium-left {
+  animation: scroll-left 40s linear infinite;
+}
+.scroll-fast-left {
+  animation: scroll-left 30s linear infinite;
+}
