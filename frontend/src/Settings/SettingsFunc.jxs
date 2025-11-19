@@ -1,0 +1,373 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import {
+  Moon,
+  Sun,
+  Lock,
+  User,
+  Key,
+  Trash2,
+  Shield,
+  UserX,
+  LogOut
+} from 'lucide-react';
+import { ThemeContext } from '../context/ThemeContext';
+import { useNavigate } from 'react-router-dom';
+
+
+function SettingsPage() {
+  const { theme, toggleTheme } = useTheme();
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [postVisibility, setPostVisibility] = useState('friends');
+  // const [isLoading, setIsLoading] = useState(false);
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
+  const [isEmailLoading, setIsEmailLoading] = useState(false);
+
+  const navigate = useNavigate();
+  const [newEmail, setNewEmail] = useState('');
+  const [currentEmail, setCurrentEmail] = useState('');
+  const [emailPassword, setEmailPassword] = useState(''); // 🔥 new state
+
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');    // 🧹 Remove from persistent storage
+    sessionStorage.removeItem('token');  // 🧼 Remove from session storage
+    navigate('/login');                  // 🔁 Redirect to login page
+  };
+
+  useEffect(() => {
+    document.title = "Settings - Gatherly";
+  }, []);
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    fetch("http://localhost:3000/api/profile", {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.email) {
+          setCurrentEmail(data.email);
+        }
+      })
+      .catch(err => console.error("Error fetching profile:", err));
+  }, []);
+
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      alert("Please fill in all fields");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      alert("New passwords don't match");
+      return;
+    }
+    if (newPassword.length < 6) {
+      alert("New password must be at least 6 characters long");
+      return;
+    }
+
+    setIsPasswordLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:3000/api/users/change-password", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        alert(data.error || "Something went wrong ❌");
+      } else {
+        alert("✅ Password changed successfully!");
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      }
+    } catch (err) {
+      alert("Network error. Please try again 😵‍💫");
+    } finally {
+      setIsPasswordLoading(false);
+    }
+  };
+
+
+  const handleChangeEmail = async (e) => {
+    e.preventDefault();
+    if (!emailPassword || !newEmail) {
+      alert("Please fill in all fields");
+      return;
+    }
+
+    setIsEmailLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:3000/api/users/change-email", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword: emailPassword, newEmail }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Something went wrong ❌");
+      } else {
+        alert("✅ Email changed successfully!");
+        setEmailPassword("");
+        setNewEmail("");
+        setCurrentEmail(newEmail);
+      }
+    } catch {
+      alert("Network error. Please try again 😵‍💫");
+    } finally {
+      setIsEmailLoading(false);
+    }
+  };
+
+
+  const handleDeleteAccount = async () => {
+    console.log("Delete Account button clicked");
+
+    if (!window.confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+      console.log("User cancelled delete");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      console.log("Token:", token);
+
+      const res = await fetch("http://localhost:3000/api/users/delete", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      console.log("Response status:", res.status);
+      const data = await res.json();
+      console.log("Response data:", data);
+
+      if (!res.ok) {
+        alert(data.error || "Something went wrong ❌");
+      } else {
+        alert("✅ Account deleted successfully!");
+        localStorage.removeItem("token");
+        sessionStorage.removeItem("token");
+        navigate("/signup");
+      }
+    } catch (err) {
+      console.error("Network error:", err);
+      alert("Network error. Please try again 😵‍💫");
+    }
+  };
+
+
+
+
+  return (
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8 mx-auto">
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
+        Settings & Privacy
+      </h1>
+
+      {/* Change Password */}
+      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+        <form onSubmit={handleChangePassword}>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+            <Key className="w-4 h-4" /> Change Password
+          </h3>
+          <div className="space-y-4">
+            <input
+              type="password"
+              placeholder="Current Password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+            <input
+              type="password"
+              placeholder="New Password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+            <input
+              type="password"
+              placeholder="Confirm New Password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+            <button
+              type="submit"
+              disabled={isPasswordLoading}
+              className={`w-full px-4 py-2 rounded-md text-white font-medium transition-colors ${isPasswordLoading
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
+                }`}
+            >
+              {isPasswordLoading ? "Updating..." : "Update Password"}
+            </button>
+          </div>
+        </form>
+      </section>
+
+
+      {/* Change Email */}
+      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+        <form onSubmit={handleChangeEmail}>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+            <User className="w-4 h-4" /> Change Email
+          </h3>
+          <p className="text-gray-600 dark:text-gray-300 mb-4">
+            Current Email: <span className="font-semibold">{currentEmail}</span>
+          </p>
+          <div className="space-y-4">
+            <input
+              type="password"
+              placeholder="Current Password"
+              value={emailPassword}                    // ✅ FIXED
+              onChange={(e) => setEmailPassword(e.target.value)}  // ✅ FIXED
+              className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+            <input
+              type="email"
+              placeholder="New Email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+            <button
+              type="submit"
+              disabled={isEmailLoading}
+              className={`w-full px-4 py-2 rounded-md text-white font-medium transition-colors ${isEmailLoading
+                ? 'bg-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
+                }`}
+            >
+              {isEmailLoading ? "Updating..." : "Update Email"}
+            </button>
+          </div>
+        </form>
+      </section>
+
+
+      {/* Delete Account */}
+      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+          <Trash2 className="w-4 h-4" />
+          Delete Account
+        </h3>
+        <button
+          onClick={handleDeleteAccount}
+          className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+        >
+          Delete Account
+        </button>
+      </section>
+
+
+
+
+      {/* Theme Toggle Section */}
+      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-6">
+          {theme === 'dark' ? (
+            <Moon className="w-5 h-5" />
+          ) : (
+            <Sun className="w-5 h-5" />
+          )}
+          Theme Settings
+        </h2>
+        <button
+          onClick={toggleTheme}
+          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+        >
+          {theme === 'dark' ? (
+            <>
+              <Sun className="w-4 h-4" />
+              Switch to Light Mode
+            </>
+          ) : (
+            <>
+              <Moon className="w-4 h-4" />
+              Switch to Dark Mode
+            </>
+          )}
+        </button>
+      </section>
+
+      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+        <div>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center gap-2 mb-4">
+            <LogOut className="w-4 h-4" />
+            Log Out
+          </h3>
+          <p className="text-gray-600 dark:text-gray-400">
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+            >
+              Log Out
+            </button>
+          </p>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+
+function ThemeProvider({ children }) {
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme');
+      return savedTheme || 'light';
+    }
+    return 'light';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('theme', theme);
+    document.documentElement.classList.remove('light', 'dark');
+    document.documentElement.classList.add(theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
+  };
+
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+function useTheme() {
+  const context = useContext(ThemeContext);
+  if (context === undefined) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
+}
+function SettingsFunc() {
+  return (
+    <ThemeProvider>
+      <SettingsPage />
+    </ThemeProvider>
+  );
+}
+
+export default SettingsFunc;
